@@ -7,7 +7,7 @@
   "features": [
     {
       "title": "FPS без инъекций",
-      "text": "Читает ETW-события вывода кадров Windows: DirectX 9–12, Vulkan и OpenGL через DXGI."
+      "text": "Читает ETW-события вывода кадров Windows: DirectX 9–12, Vulkan и OpenGL через DXGI. Работает и в браузерах."
     },
     {
       "title": "Системные метрики",

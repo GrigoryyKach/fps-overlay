@@ -30,12 +30,22 @@ internal sealed class FpsMonitor : IDisposable
     private const double WindowMs = 1000;    // окно усреднения
     private const long StaleMs = 2500;       // нет кадров дольше — считаем, что процесс не рисует
 
+    private const long FamilyRefreshMs = 2000; // как часто пересобирать список дочерних процессов
+
+    /// <summary>Кадры одного процесса: отдельно от API (DXGI / D3D9) и от ядра.</summary>
+    private sealed class Counter
+    {
+        public readonly Queue<double> Api = new();
+        public readonly Queue<double> Kernel = new();
+        public double LastApiTime, LastKernelTime;
+        public long LastApiTick, LastKernelTick;
+    }
+
     private readonly object _lock = new();
-    private readonly Queue<double> _apiFrames = new();     // DXGI / D3D9
-    private readonly Queue<double> _kernelFrames = new();  // DxgKrnl
-    private double _lastApiTime, _lastKernelTime;
-    private long _lastApiTick, _lastKernelTick;
+    // Процесс активного окна и его дочерние процессы того же приложения (GPU-процесс браузера).
+    private readonly Dictionary<int, Counter> _counters = new();
     private int _targetPid;
+    private long _familyTick;
 
     private TraceEventSession? _session;
     private Thread? _thread;
@@ -85,8 +95,6 @@ internal sealed class FpsMonitor : IDisposable
 
     private void OnEvent(TraceEvent data)
     {
-        if (data.ProcessID != Volatile.Read(ref _targetPid)) return;
-
         Guid provider = data.ProviderGuid;
         int id = (int)data.ID;
 
@@ -100,18 +108,18 @@ internal sealed class FpsMonitor : IDisposable
 
         lock (_lock)
         {
-            if (data.ProcessID != _targetPid) return;
+            if (!_counters.TryGetValue(data.ProcessID, out var c)) return;
             if (api)
             {
-                Push(_apiFrames, t);
-                _lastApiTime = t;
-                _lastApiTick = now;
+                Push(c.Api, t);
+                c.LastApiTime = t;
+                c.LastApiTick = now;
             }
             else
             {
-                Push(_kernelFrames, t);
-                _lastKernelTime = t;
-                _lastKernelTick = now;
+                Push(c.Kernel, t);
+                c.LastKernelTime = t;
+                c.LastKernelTick = now;
             }
         }
     }
@@ -124,40 +132,61 @@ internal sealed class FpsMonitor : IDisposable
 
     /// <summary>
     /// FPS указанного процесса или null, если процесс сейчас не выводит кадры
-    /// (или мониторинг недоступен).
+    /// (или мониторинг недоступен). Если окно рисует не сам процесс, а его GPU-процесс
+    /// (браузеры, Electron), берутся кадры дочернего процесса.
     /// </summary>
     public int? GetFps(int pid)
     {
         if (!IsRunning) return null;
 
+        long now = Environment.TickCount64;
+        bool retarget = pid != Volatile.Read(ref _targetPid);
+        if (retarget || now - _familyTick > FamilyRefreshMs)
+        {
+            var family = Native.ProcessTree.RenderingChildren(pid); // снимок процессов — вне блокировки
+            family.Add(pid);
+            lock (_lock)
+            {
+                if (retarget) _counters.Clear();
+                foreach (int old in new List<int>(_counters.Keys))
+                    if (!family.Contains(old)) _counters.Remove(old);
+                foreach (int p in family)
+                    if (!_counters.ContainsKey(p)) _counters[p] = new Counter();
+                _targetPid = pid;
+            }
+            _familyTick = now;
+            if (retarget) return null;
+        }
+
         lock (_lock)
         {
-            if (pid != _targetPid)
-            {
-                Volatile.Write(ref _targetPid, pid);
-                _apiFrames.Clear();
-                _kernelFrames.Clear();
-                _lastApiTick = _lastKernelTick = 0;
-                return null;
-            }
+            // Сам процесс окна важнее дочерних: так игра никогда не подменяется вспомогательным процессом.
+            if (_counters.TryGetValue(pid, out var own) && Fps(own, now) is int f) return f;
 
-            long now = Environment.TickCount64;
-            bool apiAlive = _lastApiTick != 0 && now - _lastApiTick < StaleMs;
-            bool kernelAlive = _lastKernelTick != 0 && now - _lastKernelTick < StaleMs;
-
-            // Предпочитаем DXGI/D3D9; ядро — только если от API событий нет (чтобы не считать кадр дважды).
-            Queue<double> q;
-            double last;
-            if (apiAlive) { q = _apiFrames; last = _lastApiTime; }
-            else if (kernelAlive) { q = _kernelFrames; last = _lastKernelTime; }
-            else return null;
-
-            if (q.Count < 2) return q.Count;
-
-            double span = last - q.Peek();
-            if (span < 100) return q.Count;
-            return (int)Math.Round((q.Count - 1) * 1000.0 / span);
+            int? best = null;
+            foreach (var (p, c) in _counters)
+                if (p != pid && Fps(c, now) is int v && (best is null || v > best)) best = v;
+            return best;
         }
+    }
+
+    private static int? Fps(Counter c, long now)
+    {
+        bool apiAlive = c.LastApiTick != 0 && now - c.LastApiTick < StaleMs;
+        bool kernelAlive = c.LastKernelTick != 0 && now - c.LastKernelTick < StaleMs;
+
+        // Предпочитаем DXGI/D3D9; ядро — только если от API событий нет (чтобы не считать кадр дважды).
+        Queue<double> q;
+        double last;
+        if (apiAlive) { q = c.Api; last = c.LastApiTime; }
+        else if (kernelAlive) { q = c.Kernel; last = c.LastKernelTime; }
+        else return null;
+
+        if (q.Count < 2) return q.Count;
+
+        double span = last - q.Peek();
+        if (span < 100) return q.Count;
+        return (int)Math.Round((q.Count - 1) * 1000.0 / span);
     }
 
     public void Dispose()
