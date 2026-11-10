@@ -1,0 +1,49 @@
+name: Release
+
+# Собирает Windows-сборку и публикует GitHub Release при пуше тега vX.Y.Z.
+# Лаунчер NIMVORO скачивает из релиза архив FpsOverlay-win-x64.zip (имя задано в nimvoro.json).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Версия совпадает с тегом
+        shell: pwsh
+        run: |
+          $v = ([xml](Get-Content FpsOverlay.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          "VERSION=$v" >> $env:GITHUB_ENV
+          if ("${{ github.ref_type }}" -eq "tag" -and "${{ github.ref_name }}" -ne "v$v") {
+            throw "Тег ${{ github.ref_name }} не совпадает с версией $v"
+          }
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # Self-contained: пользователю не нужно ставить .NET 8 отдельно.
+      - name: Сборка
+        run: dotnet publish FpsOverlay.csproj -c Release -r win-x64 --self-contained true -o pkg
+
+      - name: Архив
+        shell: pwsh
+        run: |
+          Remove-Item pkg/*.pdb -ErrorAction SilentlyContinue
+          Compress-Archive -Path pkg/* -DestinationPath FpsOverlay-win-x64.zip -Force
+
+      - name: Публикация релиза
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ($tag -notmatch '^v') { $tag = "v$env:VERSION" }
+          gh release create $tag "FpsOverlay-win-x64.zip" --title "FPS Overlay $tag" --generate-notes --verify-tag

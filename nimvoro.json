@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "id": "fps-overlay",
+  "name": "FPS Overlay",
+  "tagline": "FPS, CPU, GPU и RAM поверх игр",
+  "description": "Крошечный счётчик в углу экрана: FPS активной игры, загрузка процессора, видеокарты и памяти. FPS считается так же, как в PresentMon и Xbox Game Bar — без внедрения в игру.",
+  "features": [
+    {
+      "title": "FPS без инъекций",
+      "text": "Читает ETW-события вывода кадров Windows: DirectX 9–12, Vulkan и OpenGL через DXGI."
+    },
+    {
+      "title": "Системные метрики",
+      "text": "CPU как в Диспетчере задач, GPU по самому загруженному движку, используемая память."
+    },
+    {
+      "title": "Не мешает играть",
+      "text": "Клики проходят насквозь, фокус не забирается. С зажатым Alt окно перетаскивается и прилипает к углу."
+    },
+    {
+      "title": "Цвет по порогам",
+      "text": "FPS зелёный от 60, жёлтый от 30, красный ниже."
+    },
+    {
+      "title": "Трей и автозапуск",
+      "text": "Управление из значка в трее, автозапуск с Windows."
+    }
+  ],
+  "category": "Игры",
+  "accent": [
+    "#4f6bff",
+    "#8a5bff"
+  ],
+  "icon": "assets/icon.png",
+  "screenshots": [],
+  "exe": "FpsOverlay.exe",
+  "asset": "FpsOverlay-win-x64.zip",
+  "requirements": [
+    "Windows 10/11 x64",
+    "Права администратора (для подсчёта FPS)"
+  ],
+  "settingsDir": "%APPDATA%\\FpsOverlay"
+}

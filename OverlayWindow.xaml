@@ -1,0 +1,29 @@
+<Window x:Class="FpsOverlay.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FpsOverlay"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display">
+
+    <!-- Рамка становится видимой (голубой), пока зажат Alt -->
+    <Border x:Name="Frame"
+            Background="#8C000000"
+            BorderBrush="Transparent"
+            BorderThickness="1"
+            CornerRadius="2"
+            Padding="3,0,3,1">
+        <TextBlock x:Name="Readout"
+                   FontFamily="Consolas"
+                   FontSize="11"
+                   Foreground="White" />
+    </Border>
+</Window>
