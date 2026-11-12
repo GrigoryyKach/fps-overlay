@@ -4,9 +4,9 @@ using System.Runtime.InteropServices;
 namespace FpsOverlay.Native;
 
 /// <summary>
-/// Performance Data Helper — те же счётчики, что показывает Диспетчер задач.
-/// Используем PDH напрямую, потому что он умеет счётчики с шаблоном (*) —
-/// это нужно для "GPU Engine(*)", где экземпляры появляются и исчезают вместе с процессами.
+/// Performance Data Helper: the same counters Task Manager shows.
+/// PDH is used directly because it supports wildcard (*) counters,
+/// which "GPU Engine(*)" needs: its instances come and go with processes.
 /// </summary>
 internal static class Pdh
 {
@@ -22,7 +22,7 @@ internal static class Pdh
     public struct PDH_FMT_COUNTERVALUE
     {
         public uint CStatus;
-        public double doubleValue; // union; при PDH_FMT_DOUBLE — это поле (смещение 8)
+        public double doubleValue; // union; with PDH_FMT_DOUBLE this is the field (offset 8)
     }
 
     [StructLayout(LayoutKind.Sequential)]

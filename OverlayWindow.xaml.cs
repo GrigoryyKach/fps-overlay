@@ -13,9 +13,9 @@ using static FpsOverlay.Native.Win32;
 namespace FpsOverlay;
 
 /// <summary>
-/// Крошечное окно поверх всех окон. В обычном режиме "призрак": клики проходят насквозь,
-/// фокус не забирает. Пока зажат Alt — окно можно схватить мышью и перетащить,
-/// после отпускания оно прилипает к ближайшему углу монитора.
+/// A tiny always-on-top window. Normally a "ghost": clicks pass through,
+/// and it never takes focus. While Alt is held it can be grabbed and dragged,
+/// and on release it snaps to the nearest monitor corner.
 /// </summary>
 public partial class OverlayWindow : Window
 {
@@ -52,7 +52,7 @@ public partial class OverlayWindow : Window
         InitializeComponent();
         _settings = settings;
 
-        // C 23 G 97 R 9.1/32 F144
+        // C 23 G 97 R  9.1/32 F144
         Readout.Inlines.Add(Label("C"));
         Readout.Inlines.Add(_cpuRun);
         Readout.Inlines.Add(Label(" G"));
@@ -86,7 +86,7 @@ public partial class OverlayWindow : Window
         ex |= WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE;
         SetWindowLongPtr(_hwnd, GWL_EXSTYLE, (IntPtr)ex);
 
-        // Запускаем сразу (синхронно внутри Show()), чтобы трей уже знал, доступен ли FPS
+        // Start right away (synchronously inside Show()) so the tray already knows whether FPS is available
         _system.Start();
         _fps.Start();
     }
@@ -105,12 +105,12 @@ public partial class OverlayWindow : Window
         _altTimer.Stop();
         _refreshTimer.Stop();
         _topmostTimer.Stop();
-        _fps.Dispose();     // обязательно останавливаем ETW-сессию
+        _fps.Dispose();     // the ETW session must be stopped
         _system.Dispose();
         base.OnClosed(e);
     }
 
-    // ---------------- Показания ----------------
+    // ---------------- Readout ----------------
 
     internal void RefreshReadout()
     {
@@ -118,10 +118,10 @@ public partial class OverlayWindow : Window
         _cpuRun.Text = Percent(s.Cpu);
         _gpuRun.Text = Percent(s.Gpu);
         _ramRun.Text = double.IsNaN(s.RamTotalGb)
-            ? " --/--"
-            : string.Create(CultureInfo.InvariantCulture, $"{s.RamUsedGb,4:0.0}/{s.RamTotalGb:0}");
+            ? "  --/--"
+            : string.Create(CultureInfo.InvariantCulture, $"{s.RamUsedGb,5:0.0}/{s.RamTotalGb:0}");
 
-        // FPS считаем для процесса активного окна (игры)
+        // FPS is counted for the active window's process (the game)
         GetWindowThreadProcessId(GetForegroundWindow(), out uint pid);
         if (pid != 0 && pid != _ownPid) _targetPid = (int)pid;
 
@@ -143,7 +143,7 @@ public partial class OverlayWindow : Window
         return b;
     }
 
-    // ---------------- Поверх всех окон ----------------
+    // ---------------- Always on top ----------------
 
     private void KeepOnTop()
     {
@@ -151,7 +151,7 @@ public partial class OverlayWindow : Window
         SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
     }
 
-    // ---------------- Alt + перетаскивание ----------------
+    // ---------------- Alt + drag ----------------
 
     private void PollAlt()
     {
@@ -160,7 +160,7 @@ public partial class OverlayWindow : Window
         if (alt != _interactive) SetInteractive(alt);
     }
 
-    /// <summary>Включает/выключает "кликабельность" окна (снимает/ставит WS_EX_TRANSPARENT).</summary>
+    /// <summary>Turns the window's "clickability" on or off (clears/sets WS_EX_TRANSPARENT).</summary>
     private void SetInteractive(bool on)
     {
         _interactive = on;
@@ -180,7 +180,7 @@ public partial class OverlayWindow : Window
         _dragging = true;
         try
         {
-            // Системное перетаскивание "за заголовок"; возвращается, когда кнопку отпустили.
+            // System "drag by caption"; returns when the button is released.
             ReleaseCapture();
             SendMessage(_hwnd, WM_NCLBUTTONDOWN, (IntPtr)HTCAPTION, IntPtr.Zero);
         }
@@ -193,7 +193,7 @@ public partial class OverlayWindow : Window
         PollAlt();
     }
 
-    // ---------------- Углы и мониторы ----------------
+    // ---------------- Corners and monitors ----------------
 
     private void SnapToNearestCorner()
     {
@@ -229,7 +229,7 @@ public partial class OverlayWindow : Window
         ApplyCorner();
     }
 
-    /// <summary>Ставит окно в сохранённый угол сохранённого монитора (всё в физических пикселях).</summary>
+    /// <summary>Places the window in the saved corner of the saved monitor (all in physical pixels).</summary>
     private void ApplyCorner()
     {
         if (_hwnd == IntPtr.Zero) return;
@@ -257,7 +257,7 @@ public partial class OverlayWindow : Window
         if (mon == IntPtr.Zero) return false;
         var mi = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
         if (!GetMonitorInfo(mon, ref mi)) return false;
-        rect = mi.rcMonitor; // весь экран, а не рабочая область: в играх панели задач нет
+        rect = mi.rcMonitor; // the whole screen, not the work area: games have no taskbar
         return true;
     }
 }

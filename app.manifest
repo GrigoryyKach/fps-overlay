@@ -2,7 +2,7 @@
 <assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
   <assemblyIdentity version="1.0.0.0" name="FpsOverlay.app" />
 
-  <!-- Права администратора нужны для ETW-сессии (подсчёт FPS) -->
+  <!-- Administrator rights are required for the ETW session (FPS counting) -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
@@ -18,7 +18,7 @@
     </application>
   </compatibility>
 
-  <!-- Чёткий текст на мониторах с любым масштабом -->
+  <!-- Crisp text on monitors with any scaling -->
   <application xmlns="urn:schemas-microsoft-com:asm.v3">
     <windowsSettings>
       <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/PM</dpiAware>

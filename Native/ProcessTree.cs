@@ -5,17 +5,17 @@ using System.Runtime.InteropServices;
 namespace FpsOverlay.Native;
 
 /// <summary>
-/// Дочерние процессы, которые выводят кадры за окно: браузеры (Chrome, Edge, Firefox)
-/// и Electron-приложения рисуют из отдельного GPU-процесса, а не из процесса окна.
+/// Child processes that present frames on behalf of a window: browsers (Chrome, Edge, Firefox)
+/// and Electron apps draw from a separate GPU process, not from the window's process.
 /// </summary>
 internal static class ProcessTree
 {
-    // Процессы WebView2 принадлежат приложению, но называются иначе, чем его exe.
+    // WebView2 processes belong to the app but are named differently from its exe.
     private static readonly string[] SharedRenderers = { "msedgewebview2.exe" };
 
     /// <summary>
-    /// Потомки <paramref name="root"/> с тем же именем exe (или WebView2), без самого root.
-    /// Чужие программы, запущенные из этого процесса (например, игры из Проводника), не попадают.
+    /// Descendants of <paramref name="root"/> with the same exe name (or WebView2), excluding root itself.
+    /// Foreign programs launched from this process (for example, games started from Explorer) are not included.
     /// </summary>
     public static HashSet<int> RenderingChildren(int root)
     {
@@ -40,7 +40,7 @@ internal static class ProcessTree
 
         if (!name.TryGetValue(root, out var rootName)) return result;
 
-        // Обход по родителям: процесс подходит, если цепочка доходит до root через процессы того же приложения.
+        // Walk up the parents: a process qualifies if the chain reaches root through processes of the same app.
         foreach (var (pid, exe) in name)
         {
             if (pid == root) continue;

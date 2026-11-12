@@ -14,7 +14,7 @@
         SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display">
 
-    <!-- Рамка становится видимой (голубой), пока зажат Alt -->
+    <!-- The frame becomes visible (blue) while Alt is held -->
     <Border x:Name="Frame"
             Background="#8C000000"
             BorderBrush="Transparent"

@@ -2,31 +2,31 @@
   "schema": 1,
   "id": "fps-overlay",
   "name": "FPS Overlay",
-  "tagline": "FPS, CPU, GPU и RAM поверх игр",
-  "description": "Крошечный счётчик в углу экрана: FPS активной игры, загрузка процессора, видеокарты и памяти. FPS считается так же, как в PresentMon и Xbox Game Bar — без внедрения в игру.",
+  "tagline": "FPS, CPU, GPU and RAM on top of your games",
+  "description": "A tiny corner counter: FPS of the active game plus CPU, GPU and memory load. FPS is measured the same way as in PresentMon and Xbox Game Bar, with no injection into the game.",
   "features": [
     {
-      "title": "FPS без инъекций",
-      "text": "Читает ETW-события вывода кадров Windows: DirectX 9–12, Vulkan и OpenGL через DXGI. Работает и в браузерах."
+      "title": "FPS without injection",
+      "text": "Reads the Windows frame-present ETW events: DirectX 9-12, Vulkan and OpenGL through DXGI. Works in browsers too."
     },
     {
-      "title": "Системные метрики",
-      "text": "CPU как в Диспетчере задач, GPU по самому загруженному движку, используемая память."
+      "title": "System metrics",
+      "text": "CPU like Task Manager, GPU by the busiest engine, used memory."
     },
     {
-      "title": "Не мешает играть",
-      "text": "Клики проходят насквозь, фокус не забирается. С зажатым Alt окно перетаскивается и прилипает к углу."
+      "title": "Stays out of the way",
+      "text": "Clicks pass through and focus is never taken. Hold Alt to drag the window; it snaps to a corner."
     },
     {
-      "title": "Цвет по порогам",
-      "text": "FPS зелёный от 60, жёлтый от 30, красный ниже."
+      "title": "Colour by thresholds",
+      "text": "FPS is green from 60, yellow from 30, red below."
     },
     {
-      "title": "Трей и автозапуск",
-      "text": "Управление из значка в трее, автозапуск с Windows."
+      "title": "Tray, themes and autostart",
+      "text": "Controlled from the tray icon: language, light or dark theme, start with Windows."
     }
   ],
-  "category": "Игры",
+  "category": "Games",
   "accent": [
     "#4f6bff",
     "#8a5bff"
@@ -41,7 +41,69 @@
   "asset": "FpsOverlay-win-x64.zip",
   "requirements": [
     "Windows 10/11 x64",
-    "Права администратора (для подсчёта FPS)"
+    "Administrator rights (for FPS counting)"
   ],
-  "settingsDir": "%APPDATA%\\FpsOverlay"
+  "settingsDir": "%APPDATA%\\FpsOverlay",
+  "i18n": {
+    "ru": {
+      "tagline": "FPS, CPU, GPU и RAM поверх игр",
+      "description": "Крошечный счётчик в углу экрана: FPS активной игры, загрузка процессора, видеокарты и памяти. FPS считается так же, как в PresentMon и Xbox Game Bar — без внедрения в игру.",
+      "features": [
+        {
+          "title": "FPS без инъекций",
+          "text": "Читает ETW-события вывода кадров Windows: DirectX 9–12, Vulkan и OpenGL через DXGI. Работает и в браузерах."
+        },
+        {
+          "title": "Системные метрики",
+          "text": "CPU как в Диспетчере задач, GPU по самому загруженному движку, используемая память."
+        },
+        {
+          "title": "Не мешает играть",
+          "text": "Клики проходят насквозь, фокус не забирается. С зажатым Alt окно перетаскивается и прилипает к углу."
+        },
+        {
+          "title": "Цвет по порогам",
+          "text": "FPS зелёный от 60, жёлтый от 30, красный ниже."
+        },
+        {
+          "title": "Трей, темы и автозапуск",
+          "text": "Управление из значка в трее: язык, светлая или тёмная тема, автозапуск с Windows."
+        }
+      ],
+      "requirements": [
+        "Windows 10/11 x64",
+        "Права администратора (для подсчёта FPS)"
+      ]
+    },
+    "uk": {
+      "tagline": "FPS, CPU, GPU і RAM поверх ігор",
+      "description": "Крихітний лічильник у куті екрана: FPS активної гри, навантаження процесора, відеокарти та пам'яті. FPS рахується так само, як у PresentMon і Xbox Game Bar, без впровадження в гру.",
+      "features": [
+        {
+          "title": "FPS без ін'єкцій",
+          "text": "Читає ETW-події виведення кадрів Windows: DirectX 9-12, Vulkan і OpenGL через DXGI. Працює і в браузерах."
+        },
+        {
+          "title": "Системні метрики",
+          "text": "CPU як у Диспетчері завдань, GPU за найзавантаженішим рушієм, використана пам'ять."
+        },
+        {
+          "title": "Не заважає грати",
+          "text": "Кліки проходять крізь вікно, фокус не забирається. Із затиснутим Alt вікно можна перетягнути, воно прилипає до кута."
+        },
+        {
+          "title": "Колір за порогами",
+          "text": "FPS зелений від 60, жовтий від 30, червоний нижче."
+        },
+        {
+          "title": "Трей, теми та автозапуск",
+          "text": "Керування зі значка в треї: мова, світла чи темна тема, автозапуск із Windows."
+        }
+      ],
+      "requirements": [
+        "Windows 10/11 x64",
+        "Права адміністратора (для підрахунку FPS)"
+      ]
+    }
+  }
 }

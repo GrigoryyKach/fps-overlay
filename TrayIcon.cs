@@ -1,86 +1,170 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Text;
 using System.Windows.Forms;
-using FpsOverlay.Native;
+using Microsoft.Win32;
 
 namespace FpsOverlay;
 
-/// <summary>Иконка в трее — единственный способ управлять оверлеем (у него нет окна и кнопки на панели задач).</summary>
+/// <summary>Tray icon: the only way to control the overlay (it has no window or taskbar button).</summary>
 internal sealed class TrayIcon : IDisposable
 {
     private readonly NotifyIcon _notifyIcon;
     private readonly Icon _icon;
+    private readonly ContextMenuStrip _menu;
+    private readonly Settings _settings;
     private readonly ToolStripMenuItem _updateItem;
     private readonly ToolStripMenuItem _checkNowItem;
+    private readonly ToolStripMenuItem _colorItem, _autostartItem, _resetItem, _exitItem;
+    private readonly ToolStripMenuItem _updatesMenu, _autoUpdateItem, _languageMenu, _themeMenu;
+    private readonly ToolStripMenuItem _fpsErrorItem;
+    private readonly Dictionary<Lang, ToolStripMenuItem> _langItems = new();
+    private readonly Dictionary<ThemePreference, ToolStripMenuItem> _themeItems = new();
+    private readonly string? _fpsError;
     private readonly Action _exit;
     private Updater.Release? _release;
 
     public TrayIcon(OverlayWindow overlay, Settings settings, Action exit)
     {
-        // Значок exe (assets/icon.ico); если не удалось — нарисованный кодом.
-        _icon = (Environment.ProcessPath is string exePath ? Icon.ExtractAssociatedIcon(exePath) : null) ?? CreateIcon();
+        // The exe icon comes from assets/icon.ico.
+        _icon = (Environment.ProcessPath is string exePath ? Icon.ExtractAssociatedIcon(exePath) : null)
+                ?? (Icon)SystemIcons.Application.Clone();
         _exit = exit;
+        _settings = settings;
+        _fpsError = overlay.Fps.Error;
 
-        var colorItem = new ToolStripMenuItem("Цвет FPS по порогам") { Checked = settings.ColorFps, CheckOnClick = true };
-        colorItem.CheckedChanged += (_, _) =>
+        _colorItem = new ToolStripMenuItem { Checked = settings.ColorFps, CheckOnClick = true };
+        _colorItem.CheckedChanged += (_, _) =>
         {
-            settings.ColorFps = colorItem.Checked;
+            settings.ColorFps = _colorItem.Checked;
             settings.Save();
             overlay.RefreshReadout();
         };
 
-        var autostartItem = new ToolStripMenuItem("Автозапуск с Windows") { Checked = Autostart.IsEnabled() };
-        autostartItem.Click += (_, _) =>
+        _autostartItem = new ToolStripMenuItem { Checked = Autostart.IsEnabled() };
+        _autostartItem.Click += (_, _) =>
         {
-            bool want = !autostartItem.Checked;
+            bool want = !_autostartItem.Checked;
             if (Autostart.Set(want, out string? error))
-                autostartItem.Checked = want;
+                _autostartItem.Checked = want;
             else
-                MessageBox.Show("Не удалось изменить автозапуск:\n" + error, "FPS Overlay",
+                MessageBox.Show(Strings.F("autostart.fail", error ?? ""), "FPS Overlay",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
         };
 
-        var resetItem = new ToolStripMenuItem("Сбросить позицию", null, (_, _) => overlay.ResetPosition());
-        var exitItem = new ToolStripMenuItem("Выход", null, (_, _) => exit());
+        _resetItem = new ToolStripMenuItem(null, null, (_, _) => overlay.ResetPosition());
+        _exitItem = new ToolStripMenuItem(null, null, (_, _) => exit());
 
-        // Обновления (NIMVORO)
-        _updateItem = new ToolStripMenuItem("Обновить") { Visible = false, Font = new Font(SystemFonts.MenuFont ?? Control.DefaultFont, FontStyle.Bold) };
-        _updateItem.Click += (_, _) => { if (Updater.Apply(_release)) _exit(); };
-        var autoUpdateItem = new ToolStripMenuItem("Проверять обновления при запуске") { Checked = settings.CheckUpdates, CheckOnClick = true };
-        autoUpdateItem.CheckedChanged += (_, _) =>
+        // Language submenu
+        _languageMenu = new ToolStripMenuItem();
+        foreach (var lang in new[] { Lang.En, Lang.Ru, Lang.Uk })
         {
-            settings.CheckUpdates = autoUpdateItem.Checked;
+            var item = new ToolStripMenuItem(Strings.NativeName(lang));
+            item.Click += (_, _) => SetLanguage(lang);
+            _langItems[lang] = item;
+            _languageMenu.DropDownItems.Add(item);
+        }
+
+        // Theme submenu
+        _themeMenu = new ToolStripMenuItem();
+        foreach (var pref in new[] { ThemePreference.System, ThemePreference.Light, ThemePreference.Dark })
+        {
+            var item = new ToolStripMenuItem();
+            item.Click += (_, _) => SetTheme(pref);
+            _themeItems[pref] = item;
+            _themeMenu.DropDownItems.Add(item);
+        }
+
+        // Updates (NIMVORO)
+        _updateItem = new ToolStripMenuItem { Visible = false, Font = new Font(SystemFonts.MenuFont ?? Control.DefaultFont, FontStyle.Bold) };
+        _updateItem.Click += (_, _) => { if (Updater.Apply(_release)) _exit(); };
+        _autoUpdateItem = new ToolStripMenuItem { Checked = settings.CheckUpdates, CheckOnClick = true };
+        _autoUpdateItem.CheckedChanged += (_, _) =>
+        {
+            settings.CheckUpdates = _autoUpdateItem.Checked;
             settings.Save();
         };
-        _checkNowItem = new ToolStripMenuItem($"Проверить обновления (версия {Updater.CurrentText})", null, async (_, _) => await CheckUpdates(true));
-        var updatesMenu = new ToolStripMenuItem("Обновления");
-        updatesMenu.DropDownItems.AddRange(new ToolStripItem[] { autoUpdateItem, _checkNowItem });
+        _checkNowItem = new ToolStripMenuItem(null, null, async (_, _) => await CheckUpdates(true));
+        _updatesMenu = new ToolStripMenuItem();
+        _updatesMenu.DropDownItems.AddRange(new ToolStripItem[] { _autoUpdateItem, _checkNowItem });
 
-        var menu = new ContextMenuStrip();
-        if (overlay.Fps.Error is string fpsError)
+        _menu = new ContextMenuStrip();
+        _fpsErrorItem = new ToolStripMenuItem { Enabled = false };
+        if (_fpsError != null)
         {
-            menu.Items.Add(new ToolStripMenuItem("FPS недоступен: " + fpsError) { Enabled = false });
-            menu.Items.Add(new ToolStripSeparator());
+            _menu.Items.Add(_fpsErrorItem);
+            _menu.Items.Add(new ToolStripSeparator());
         }
-        menu.Items.Add(_updateItem);
-        menu.Items.AddRange(new ToolStripItem[] { colorItem, autostartItem, resetItem, updatesMenu, new ToolStripSeparator(), exitItem });
-
-        _notifyIcon = new NotifyIcon
+        _menu.Items.Add(_updateItem);
+        _menu.Items.AddRange(new ToolStripItem[]
         {
-            Icon = _icon,
-            Text = "FPS Overlay — Alt + мышь: перетащить",
-            ContextMenuStrip = menu,
-            Visible = true,
-        };
+            _colorItem, _autostartItem, _resetItem, _languageMenu, _themeMenu, _updatesMenu,
+            new ToolStripSeparator(), _exitItem,
+        });
+
+        _notifyIcon = new NotifyIcon { Icon = _icon, ContextMenuStrip = _menu, Visible = true };
         _notifyIcon.BalloonTipClicked += (_, _) => { if (_release != null && Updater.Apply(_release)) _exit(); };
+
+        ApplyTexts();
+        ApplyTheme();
+        SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
 
         if (settings.CheckUpdates)
             _ = CheckUpdates(false);
     }
 
-    /// <summary>Проверка обновлений. При ручной проверке сообщаем и об отсутствии обновлений.</summary>
+    private void SetLanguage(Lang lang)
+    {
+        Strings.Set(lang);
+        _settings.Language = Strings.Code(lang);
+        _settings.Save();
+        ApplyTexts();
+    }
+
+    private void SetTheme(ThemePreference pref)
+    {
+        _settings.Theme = pref;
+        _settings.Save();
+        ApplyTheme();
+        ApplyTexts();
+    }
+
+    /// <summary>Sets every menu text for the current language and ticks the selected language/theme.</summary>
+    private void ApplyTexts()
+    {
+        _colorItem.Text = Strings.T("menu.color");
+        _autostartItem.Text = Strings.T("menu.autostart");
+        _resetItem.Text = Strings.T("menu.reset");
+        _exitItem.Text = Strings.T("menu.exit");
+        _languageMenu.Text = Strings.T("menu.language");
+        _themeMenu.Text = Strings.T("menu.theme");
+        _updatesMenu.Text = Strings.T("menu.updates");
+        _autoUpdateItem.Text = Strings.T("menu.autoUpdate");
+        _checkNowItem.Text = Strings.F("menu.checkNow", Updater.CurrentText);
+        if (_release != null) _updateItem.Text = Strings.F("menu.updateTo", _release.Version);
+        if (_fpsError != null)
+            _fpsErrorItem.Text = Strings.F("menu.fpsUnavailable",
+                _fpsError == Metrics.FpsMonitor.AdminRequired ? Strings.T("err.admin") : _fpsError);
+        _notifyIcon.Text = Strings.T("tray.tip");
+
+        foreach (var (lang, item) in _langItems) item.Checked = lang == Strings.Current;
+        foreach (var (pref, item) in _themeItems)
+        {
+            item.Text = Strings.T("theme." + pref.ToString().ToLowerInvariant());
+            item.Checked = pref == _settings.Theme;
+        }
+    }
+
+    private void ApplyTheme() => Theme.Apply(_menu, Theme.Resolve(_settings.Theme));
+
+    /// <summary>System theme follows Windows live.</summary>
+    private void OnUserPreferenceChanged(object? sender, UserPreferenceChangedEventArgs e)
+    {
+        if (e.Category != UserPreferenceCategory.General || _settings.Theme != ThemePreference.System) return;
+        System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(ApplyTheme));
+    }
+
+    /// <summary>Checks for updates. A manual check also reports that there is nothing new.</summary>
     private async System.Threading.Tasks.Task CheckUpdates(bool manual)
     {
         _checkNowItem.Enabled = false;
@@ -89,59 +173,23 @@ internal sealed class TrayIcon : IDisposable
         _release = newer;
         if (newer != null)
         {
-            _updateItem.Text = $"Обновить до версии {newer.Version}";
+            _updateItem.Text = Strings.F("menu.updateTo", newer.Version);
             _updateItem.Visible = true;
-            _notifyIcon.ShowBalloonTip(5000, "FPS Overlay", $"Доступна версия {newer.Version}. Щёлкните, чтобы обновить.", ToolTipIcon.Info);
+            _notifyIcon.ShowBalloonTip(5000, "FPS Overlay", Strings.F("update.available", newer.Version), ToolTipIcon.Info);
         }
         else if (manual)
         {
             _notifyIcon.ShowBalloonTip(3000, "FPS Overlay",
-                ok ? $"Установлена последняя версия ({Updater.CurrentText})" : "Не удалось проверить обновления", ToolTipIcon.Info);
-        }
-    }
-
-    /// <summary>Рисуем иконку кодом, чтобы не таскать .ico-файл.</summary>
-    private static Icon CreateIcon()
-    {
-        using var bmp = new Bitmap(32, 32);
-        using (var g = Graphics.FromImage(bmp))
-        {
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
-            g.Clear(Color.Transparent);
-
-            using var bg = new SolidBrush(Color.FromArgb(255, 24, 24, 24));
-            using var path = new GraphicsPath();
-            const int r = 8;
-            path.AddArc(0, 0, r, r, 180, 90);
-            path.AddArc(31 - r, 0, r, r, 270, 90);
-            path.AddArc(31 - r, 31 - r, r, r, 0, 90);
-            path.AddArc(0, 31 - r, r, r, 90, 90);
-            path.CloseFigure();
-            g.FillPath(bg, path);
-
-            using var font = new Font("Consolas", 22, FontStyle.Bold, GraphicsUnit.Pixel);
-            using var fg = new SolidBrush(Color.FromArgb(255, 0x6E, 0xE7, 0x7A));
-            var fmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-            g.DrawString("F", font, fg, new RectangleF(0, 1, 32, 32), fmt);
-        }
-
-        IntPtr hIcon = bmp.GetHicon();
-        try
-        {
-            using var tmp = Icon.FromHandle(hIcon);
-            return (Icon)tmp.Clone();
-        }
-        finally
-        {
-            Win32.DestroyIcon(hIcon);
+                ok ? Strings.F("update.latest", Updater.CurrentText) : Strings.T("update.failed"), ToolTipIcon.Info);
         }
     }
 
     public void Dispose()
     {
+        SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();
+        _menu.Dispose();
         _icon.Dispose();
     }
 }

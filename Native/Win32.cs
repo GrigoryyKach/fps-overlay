@@ -3,14 +3,14 @@ using System.Runtime.InteropServices;
 
 namespace FpsOverlay.Native;
 
-/// <summary>P/Invoke к user32/kernel32: стили окна, позиция, мониторы, клавиатура, память.</summary>
+/// <summary>P/Invoke to user32/kernel32: window styles, position, monitors, keyboard, memory.</summary>
 internal static class Win32
 {
     public const int GWL_EXSTYLE = -20;
-    public const long WS_EX_TRANSPARENT = 0x00000020;  // клики проходят сквозь окно
-    public const long WS_EX_TOOLWINDOW = 0x00000080;   // нет в Alt+Tab
-    public const long WS_EX_LAYERED = 0x00080000;      // прозрачность
-    public const long WS_EX_NOACTIVATE = 0x08000000;   // не забирает фокус у игры
+    public const long WS_EX_TRANSPARENT = 0x00000020;  // clicks pass through the window
+    public const long WS_EX_TOOLWINDOW = 0x00000080;   // hidden from Alt+Tab
+    public const long WS_EX_LAYERED = 0x00080000;      // transparency
+    public const long WS_EX_NOACTIVATE = 0x08000000;   // does not steal focus from the game
 
     public static readonly IntPtr HWND_TOPMOST = new(-1);
     public const uint SWP_NOSIZE = 0x0001;

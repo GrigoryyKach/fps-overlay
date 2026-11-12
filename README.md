@@ -1,48 +1,59 @@
 # FPS Overlay
 
-Крошечный счётчик в углу экрана для Windows: FPS активной игры, загрузка процессора, видеокарты и памяти.
-Написан на C# (WPF, .NET 8).
+A tiny corner counter for Windows: FPS of the active game, plus CPU, GPU and RAM load.
+Written in C# (WPF, .NET 8).
 
 ```
 C 23  G 97  R 9.1/32  F 144
 ```
 
-## Что умеет
+## Features
 
-- **FPS без внедрения в игру.** Программа подписывается на ETW-события вывода кадров (Present), которые Windows пишет сама, — как PresentMon и Xbox Game Bar.
-  Поддерживаются DirectX 9–12, а также Vulkan и OpenGL, если драйвер выводит кадры через DXGI. Для этого нужны права администратора.
-  Браузеры (Chrome, Edge, Firefox) и Electron-приложения рисуют из отдельного GPU-процесса — его кадры тоже засчитываются окну.
-- **CPU** считается как в Диспетчере задач (`% Processor Utility`), **GPU** — по самому загруженному движку видеокарты, **RAM** — занято / всего.
-- **Не мешает играть:** клики проходят насквозь, фокус не забирается. С зажатым Alt окно можно перетащить, после отпускания оно прилипает к ближайшему углу монитора.
-- **Цвет FPS по порогам:** зелёный от 60, жёлтый от 30, красный ниже.
-- **Трей:** цвет по порогам, автозапуск с Windows, сброс позиции, обновления, выход.
+- **FPS without injecting into the game.** The app subscribes to the frame-present ETW events that Windows writes itself, the same way PresentMon and Xbox Game Bar do.
+  DirectX 9-12 are supported, as well as Vulkan and OpenGL when the driver presents through DXGI. Administrator rights are required.
+  Browsers (Chrome, Edge, Firefox) and Electron apps draw from a separate GPU process; its frames are counted for the window too.
+- **CPU** is measured like Task Manager does (`% Processor Utility`), **GPU** is the busiest engine of the video card, **RAM** is used / total.
+- **Stays out of the way:** clicks pass through and focus is never taken. Hold Alt to drag the window; on release it snaps to the nearest monitor corner.
+- **FPS colour by thresholds:** green from 60, yellow from 30, red below.
+- **Tray menu:** colour thresholds, start with Windows, reset position, language, theme, updates, exit.
 
-## Сборка
+## Languages
+
+The interface is available in English (default), Russian and Ukrainian. Change it from the tray menu: **Language**.
+The starting language is taken from `settings.json`, otherwise from the `language` field of the `.nimvoro.json` marker next to the exe (written by the NIMVORO launcher), otherwise English.
+
+## Theme
+
+Tray menu: **Theme** > System / Light / Dark. System follows Windows live. The choice is stored in `settings.json` (`Theme`).
+
+## Build
 
 ```bash
 dotnet publish -c Release -r win-x64 --self-contained true -o publish
 ```
 
-Запуск: `publish\FpsOverlay.exe` (попросит права администратора).
-Настройки: `%APPDATA%\FpsOverlay\settings.json`.
+Run `publish\FpsOverlay.exe` (it asks for administrator rights).
+Settings: `%APPDATA%\FpsOverlay\settings.json` (`Corner`, `ColorFps`, `CheckUpdates`, `Language`, `Theme`).
 
-## Устройство
+## Layout
 
 ```
-App.xaml.cs            единственный экземпляр, запуск окна и трея
-OverlayWindow.xaml(.cs) окно-призрак поверх всех, перетаскивание с Alt, прилипание к углам
-Metrics/FpsMonitor.cs  FPS по ETW-событиям DXGI / D3D9 / DxgKrnl
-Native/ProcessTree.cs  дочерние процессы, которые рисуют за окно (GPU-процесс браузера)
-Metrics/SystemMonitor.cs CPU, GPU (PDH) и RAM раз в секунду
-TrayIcon.cs            меню в трее
-Updater.cs             проверка обновлений и передача лаунчеру NIMVORO
-Autostart.cs           автозапуск через Планировщик заданий (с правами администратора)
+App.xaml.cs              single instance, starts the window and the tray
+OverlayWindow.xaml(.cs)  click-through always-on-top window, Alt drag, corner snapping
+Metrics/FpsMonitor.cs    FPS from DXGI / D3D9 / DxgKrnl ETW events
+Native/ProcessTree.cs    child processes that draw for the window (a browser's GPU process)
+Metrics/SystemMonitor.cs CPU, GPU (PDH) and RAM once a second
+TrayIcon.cs              tray menu
+Strings.cs               en/ru/uk string table and starting-language resolution
+Theme.cs                 System/Light/Dark palettes and the tray menu renderer
+Updater.cs               update check and hand-off to the NIMVORO launcher
+Autostart.cs             autostart through Task Scheduler (with administrator rights)
 ```
 
-## Обновления и NIMVORO
+## Updates and NIMVORO
 
-Утилита входит в набор [NIMVORO](https://github.com/GrigoryyKach/nimvoro): лаунчер ставит её в один клик и обновляет.
-При запуске программа проверяет последний [релиз](https://github.com/GrigoryyKach/fps-overlay/releases/latest) (переключатель «Обновления → Проверять обновления при запуске» в меню трея).
-Если есть новая версия, кнопка «Обновить» передаёт обновление лаунчеру, а без лаунчера открывает страницу релиза.
+The tool is part of the [NIMVORO](https://github.com/GrigoryyKach/nimvoro) suite: the launcher installs and updates it in one click.
+On startup the app checks the latest [release](https://github.com/GrigoryyKach/fps-overlay/releases/latest) (toggle **Updates > Check for updates on startup** in the tray menu).
+When a newer version exists, the Update item hands the update to the launcher; without the launcher it opens the release page.
 
-Релиз собирается GitHub Actions при пуше тега: поднимите версию в `FpsOverlay.csproj`, затем `git tag v{версия} && git push --tags`.
+Releases are built by GitHub Actions when a tag is pushed: bump the version in `FpsOverlay.csproj`, then `git tag v{version} && git push --tags`.

@@ -6,15 +6,15 @@ using FpsOverlay.Native;
 
 namespace FpsOverlay.Metrics;
 
-/// <summary>Снимок системных метрик. NaN = значение недоступно.</summary>
+/// <summary>Snapshot of system metrics. NaN = value unavailable.</summary>
 internal sealed record SystemSnapshot(double Cpu, double Gpu, double RamUsedGb, double RamTotalGb)
 {
     public static readonly SystemSnapshot Empty = new(double.NaN, double.NaN, double.NaN, double.NaN);
 }
 
 /// <summary>
-/// Раз в секунду в фоновом потоке опрашивает CPU, GPU (через PDH) и RAM (GlobalMemoryStatusEx).
-/// UI только читает готовый снимок <see cref="Current"/>.
+/// Polls CPU, GPU (via PDH) and RAM (GlobalMemoryStatusEx) once a second on a background thread.
+/// The UI only reads the ready snapshot <see cref="Current"/>.
 /// </summary>
 internal sealed class SystemMonitor : IDisposable
 {
@@ -39,9 +39,9 @@ internal sealed class SystemMonitor : IDisposable
     private void Loop()
     {
         InitPdh();
-        if (_query != IntPtr.Zero) Pdh.PdhCollectQueryData(_query); // первый замер — точка отсчёта
+        if (_query != IntPtr.Zero) Pdh.PdhCollectQueryData(_query); // first sample is the baseline
 
-        var (ramUsed, ramTotal) = ReadRam(); // RAM показываем сразу, CPU/GPU — после второго замера
+        var (ramUsed, ramTotal) = ReadRam(); // RAM is shown at once, CPU/GPU after the second sample
         _current = _current with { RamUsedGb = ramUsed, RamTotalGb = ramTotal };
 
         while (!_stop.Wait(IntervalMs))
@@ -68,15 +68,15 @@ internal sealed class SystemMonitor : IDisposable
             return;
         }
 
-        // "% Processor Utility" совпадает с Диспетчером задач Win10/11 (учитывает турбо-частоты).
-        // На старых системах его может не быть — тогда классический "% Processor Time".
+        // "% Processor Utility" matches Task Manager on Win10/11 (accounts for turbo clocks).
+        // Older systems may lack it; then the classic "% Processor Time".
         if (Pdh.PdhAddEnglishCounter(_query, @"\Processor Information(_Total)\% Processor Utility", IntPtr.Zero, out _cpuCounter) != Pdh.ERROR_SUCCESS &&
             Pdh.PdhAddEnglishCounter(_query, @"\Processor(_Total)\% Processor Time", IntPtr.Zero, out _cpuCounter) != Pdh.ERROR_SUCCESS)
         {
             _cpuCounter = IntPtr.Zero;
         }
 
-        // Загрузка каждого движка видеокарты по каждому процессу.
+        // Load of every GPU engine for every process.
         if (Pdh.PdhAddEnglishCounter(_query, @"\GPU Engine(*)\Utilization Percentage", IntPtr.Zero, out _gpuCounter) != Pdh.ERROR_SUCCESS)
         {
             _gpuCounter = IntPtr.Zero;
@@ -92,9 +92,9 @@ internal sealed class SystemMonitor : IDisposable
     }
 
     /// <summary>
-    /// Как в Диспетчере задач: суммируем загрузку по процессам для каждого движка
-    /// (3D, Copy, VideoDecode, Compute…) и берём максимум среди движков.
-    /// Имя экземпляра: pid_1234_luid_0x..._0x..._phys_0_eng_0_engtype_3D
+    /// Like Task Manager: sum the load over processes for each engine
+    /// (3D, Copy, VideoDecode, Compute…) and take the maximum across engines.
+    /// Instance name: pid_1234_luid_0x..._0x..._phys_0_eng_0_engtype_3D
     /// </summary>
     private double ReadGpu()
     {

@@ -7,20 +7,26 @@ namespace FpsOverlay;
 
 internal enum Corner { TopLeft, TopRight, BottomLeft, BottomRight }
 
-/// <summary>Настройки в %AppData%\FpsOverlay\settings.json.</summary>
+/// <summary>Settings in %AppData%\FpsOverlay\settings.json.</summary>
 internal sealed class Settings
 {
     public Corner Corner { get; set; } = Corner.TopLeft;
 
-    /// <summary>Точка внутри нужного монитора (центр), в физических пикселях. 0,0 — основной монитор.</summary>
+    /// <summary>A point inside the chosen monitor (its centre), in physical pixels. 0,0 is the primary monitor.</summary>
     public int MonitorX { get; set; }
     public int MonitorY { get; set; }
 
-    /// <summary>Красить FPS: зелёный ≥ 60, жёлтый ≥ 30, красный ниже.</summary>
+    /// <summary>Colour FPS: green from 60, yellow from 30, red below.</summary>
     public bool ColorFps { get; set; } = true;
 
-    /// <summary>Проверять обновления при запуске (NIMVORO).</summary>
+    /// <summary>Check for updates on startup (NIMVORO).</summary>
     public bool CheckUpdates { get; set; } = true;
+
+    /// <summary>UI language code: en, ru or uk. Null until first resolved (see Strings.Resolve).</summary>
+    public string? Language { get; set; }
+
+    /// <summary>Tray menu theme: System (follows Windows), Light or Dark.</summary>
+    public ThemePreference Theme { get; set; } = ThemePreference.System;
 
     private static readonly string Dir =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FpsOverlay");
@@ -39,7 +45,7 @@ internal sealed class Settings
             if (File.Exists(FilePath))
                 return JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath), Json) ?? new Settings();
         }
-        catch { /* битый файл — начинаем с настроек по умолчанию */ }
+        catch { /* corrupt file: start with defaults */ }
         return new Settings();
     }
 
@@ -50,6 +56,6 @@ internal sealed class Settings
             Directory.CreateDirectory(Dir);
             File.WriteAllText(FilePath, JsonSerializer.Serialize(this, Json));
         }
-        catch { /* не критично */ }
+        catch { /* not critical */ }
     }
 }

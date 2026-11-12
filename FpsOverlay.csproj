@@ -4,7 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <!-- WinForms нужен только для иконки в трее (NotifyIcon) -->
+    <!-- WinForms is only needed for the tray icon and menu (NotifyIcon) -->
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -13,15 +13,15 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <ApplicationIcon>assets\icon.ico</ApplicationIcon>
     <Product>FPS Overlay</Product>
-    <!-- DPI задаём в манифесте — это правильно для WPF; предупреждение относится к WinForms-окнам -->
+    <!-- DPI is set in the manifest, which is right for WPF; the warning concerns WinForms windows -->
     <NoWarn>$(NoWarn);WFAC010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Чтение ETW-событий Present (DXGI / D3D9 / DxgKrnl) для подсчёта FPS -->
+    <!-- Reads ETW Present events (DXGI / D3D9 / DxgKrnl) to count FPS -->
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.*" />
   </ItemGroup>
 

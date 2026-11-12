@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 namespace FpsOverlay;
 
 /// <summary>
-/// NIMVORO: проверка обновлений через GitHub Releases и передача обновления лаунчеру.
-/// Контракт описан в nimvoro/docs/ADDING_A_TOOL.md.
+/// NIMVORO: update check via GitHub Releases and hand-off of the update to the launcher.
+/// The contract is described in nimvoro/docs/ADDING_A_TOOL.md.
 /// </summary>
 internal static class Updater
 {
@@ -24,7 +24,7 @@ internal static class Updater
 
     public sealed record Release(string Version, string Url);
 
-    /// <summary>Последний релиз, если он новее установленного; null — обновлений нет или проверить не удалось.</summary>
+    /// <summary>The latest release if it is newer than the installed one; null means no update or the check failed.</summary>
     public static async Task<(bool ok, Release? newer)> CheckAsync()
     {
         try
@@ -53,7 +53,7 @@ internal static class Updater
         return new Version(At(0), At(1), At(2), 0);
     }
 
-    /// <summary>Путь к NIMVORO.exe из %APPDATA%\NIMVORO\launcher.json.</summary>
+    /// <summary>Path to NIMVORO.exe from %APPDATA%\NIMVORO\launcher.json.</summary>
     public static string? LauncherPath()
     {
         try
@@ -69,7 +69,7 @@ internal static class Updater
         }
     }
 
-    /// <summary>true — обновление передано лаунчеру, приложению пора закрыться.</summary>
+    /// <summary>true means the update was handed to the launcher and the app should close.</summary>
     public static bool Apply(Release? release)
     {
         if (LauncherPath() is string exe)
@@ -79,7 +79,7 @@ internal static class Updater
                 Process.Start(new ProcessStartInfo(exe) { ArgumentList = { "--update", Id }, UseShellExecute = false });
                 return true;
             }
-            catch { /* откроем страницу релиза */ }
+            catch { /* fall back to the release page */ }
         }
         var url = release?.Url is { Length: > 0 } u ? u : $"https://github.com/{Repo}/releases/latest";
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); } catch { }

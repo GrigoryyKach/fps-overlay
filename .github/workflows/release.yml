@@ -1,7 +1,7 @@
 name: Release
 
-# Собирает Windows-сборку и публикует GitHub Release при пуше тега vX.Y.Z.
-# Лаунчер NIMVORO скачивает из релиза архив FpsOverlay-win-x64.zip (имя задано в nimvoro.json).
+# Builds the Windows package and publishes a GitHub Release when a vX.Y.Z tag is pushed.
+# The NIMVORO launcher downloads FpsOverlay-win-x64.zip from the release (name set in nimvoro.json).
 on:
   push:
     tags: ["v*"]
@@ -16,30 +16,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Версия совпадает с тегом
+      - name: Version matches the tag
         shell: pwsh
         run: |
           $v = ([xml](Get-Content FpsOverlay.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
           "VERSION=$v" >> $env:GITHUB_ENV
           if ("${{ github.ref_type }}" -eq "tag" -and "${{ github.ref_name }}" -ne "v$v") {
-            throw "Тег ${{ github.ref_name }} не совпадает с версией $v"
+            throw "Tag ${{ github.ref_name }} does not match version $v"
           }
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
 
-      # Self-contained: пользователю не нужно ставить .NET 8 отдельно.
-      - name: Сборка
+      # Self-contained: users do not need to install .NET 8 separately.
+      - name: Build
         run: dotnet publish FpsOverlay.csproj -c Release -r win-x64 --self-contained true -o pkg
 
-      - name: Архив
+      - name: Package
         shell: pwsh
         run: |
           Remove-Item pkg/*.pdb -ErrorAction SilentlyContinue
           Compress-Archive -Path pkg/* -DestinationPath FpsOverlay-win-x64.zip -Force
 
-      - name: Публикация релиза
+      - name: Publish release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}

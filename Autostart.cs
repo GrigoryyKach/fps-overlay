@@ -8,9 +8,9 @@ using System.Text;
 namespace FpsOverlay;
 
 /// <summary>
-/// Автозапуск через Планировщик заданий, а не через реестр Run:
-/// программы с requireAdministrator из Run-ключа Windows молча не запускает.
-/// Задача с "наивысшими правами" стартует при входе в систему без окна UAC.
+/// Autostart through Task Scheduler rather than the Run registry key:
+/// Windows silently skips requireAdministrator programs in the Run key.
+/// A task with the highest privileges starts at logon without a UAC prompt.
 /// </summary>
 internal static class Autostart
 {
@@ -28,15 +28,15 @@ internal static class Autostart
             return code == 0;
         }
 
-        string exe = Environment.ProcessPath ?? throw new InvalidOperationException("Не найден путь к exe");
+        string exe = Environment.ProcessPath ?? throw new InvalidOperationException("Cannot find the exe path");
         string user = WindowsIdentity.GetCurrent().Name;
 
-        // XML вместо простых флагов schtasks: иначе задача по умолчанию убивается через 72 часа
-        // и не запускается от батареи.
+        // XML instead of plain schtasks flags: otherwise the task is killed after 72 hours by default
+        // and does not start on battery.
         string xml = $"""
             <?xml version="1.0" encoding="UTF-16"?>
             <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
-              <RegistrationInfo><Description>FPS Overlay: CPU / GPU / RAM / FPS поверх игр</Description></RegistrationInfo>
+              <RegistrationInfo><Description>FPS Overlay: CPU / GPU / RAM / FPS on top of games</Description></RegistrationInfo>
               <Triggers>
                 <LogonTrigger>
                   <Enabled>true</Enabled>

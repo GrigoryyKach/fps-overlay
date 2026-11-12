@@ -7,13 +7,13 @@ using Microsoft.Diagnostics.Tracing.Session;
 namespace FpsOverlay.Metrics;
 
 /// <summary>
-/// Считает FPS без вмешательства в игру: подписывается на ETW-события,
-/// которые Windows сама пишет при каждом выводе кадра (Present).
-/// Так же работают PresentMon и Xbox Game Bar. Нужны права администратора.
+/// Counts FPS without touching the game: subscribes to the ETW events
+/// that Windows itself writes on every presented frame (Present).
+/// PresentMon and Xbox Game Bar work the same way. Administrator rights are required.
 /// </summary>
 internal sealed class FpsMonitor : IDisposable
 {
-    // DirectX 10/11/12 (а также Vulkan/OpenGL, если драйвер выводит кадры через DXGI)
+    // DirectX 10/11/12 (and Vulkan/OpenGL when the driver presents through DXGI)
     private static readonly Guid DxgiProvider = new("CA11C036-0102-4A2D-A6AD-F03CFED5D3C9");
     private const int DxgiPresentStart = 42;
 
@@ -21,18 +21,18 @@ internal sealed class FpsMonitor : IDisposable
     private static readonly Guid D3D9Provider = new("783ACA0A-790E-4D7F-8451-AA850511C6B9");
     private const int D3D9PresentStart = 1;
 
-    // Ядро графической подсистемы — запасной источник для API, не идущих через DXGI/D3D9
+    // Graphics kernel: a fallback source for APIs that do not go through DXGI/D3D9
     private static readonly Guid DxgKrnlProvider = new("802EC45A-1E99-4B83-9920-87C98277BA9D");
     private const int DxgKrnlPresent = 184;
     private const ulong DxgKrnlPresentKeyword = 0x8000000;
 
     private const string SessionName = "FpsOverlay_PresentTrace";
-    private const double WindowMs = 1000;    // окно усреднения
-    private const long StaleMs = 2500;       // нет кадров дольше — считаем, что процесс не рисует
+    private const double WindowMs = 1000;    // averaging window
+    private const long StaleMs = 2500;       // no frames for longer than this: the process is not rendering
 
-    private const long FamilyRefreshMs = 2000; // как часто пересобирать список дочерних процессов
+    private const long FamilyRefreshMs = 2000; // how often to rebuild the child process list
 
-    /// <summary>Кадры одного процесса: отдельно от API (DXGI / D3D9) и от ядра.</summary>
+    /// <summary>Frames of one process: kept separately for the APIs (DXGI / D3D9) and for the kernel.</summary>
     private sealed class Counter
     {
         public readonly Queue<double> Api = new();
@@ -42,7 +42,7 @@ internal sealed class FpsMonitor : IDisposable
     }
 
     private readonly object _lock = new();
-    // Процесс активного окна и его дочерние процессы того же приложения (GPU-процесс браузера).
+    // The active window's process and child processes of the same app (a browser's GPU process).
     private readonly Dictionary<int, Counter> _counters = new();
     private int _targetPid;
     private long _familyTick;
@@ -51,6 +51,9 @@ internal sealed class FpsMonitor : IDisposable
     private Thread? _thread;
 
     public bool IsRunning { get; private set; }
+    /// <summary>Value of <see cref="Error"/> when the ETW session cannot start without administrator rights.</summary>
+    public const string AdminRequired = "admin";
+
     public string? Error { get; private set; }
 
     public void Start()
@@ -58,13 +61,13 @@ internal sealed class FpsMonitor : IDisposable
         if (IsRunning) return;
         if (TraceEventSession.IsElevated() != true)
         {
-            Error = "Нужны права администратора";
+            Error = AdminRequired;
             return;
         }
 
         try
         {
-            // Если после аварийного завершения осталась сессия с тем же именем — она будет заменена.
+            // A leftover session with the same name after a crash will be replaced.
             _session = new TraceEventSession(SessionName) { StopOnDispose = true };
             _session.EnableProvider(DxgiProvider, TraceEventLevel.Informational);
             _session.EnableProvider(D3D9Provider, TraceEventLevel.Informational);
@@ -75,8 +78,8 @@ internal sealed class FpsMonitor : IDisposable
             var session = _session;
             _thread = new Thread(() =>
             {
-                try { session.Source.Process(); } // блокирует до остановки сессии
-                catch { /* сессия остановлена */ }
+                try { session.Source.Process(); } // blocks until the session stops
+                catch { /* session stopped */ }
                 IsRunning = false;
             })
             { IsBackground = true, Name = "FpsMonitor" };
@@ -131,9 +134,9 @@ internal sealed class FpsMonitor : IDisposable
     }
 
     /// <summary>
-    /// FPS указанного процесса или null, если процесс сейчас не выводит кадры
-    /// (или мониторинг недоступен). Если окно рисует не сам процесс, а его GPU-процесс
-    /// (браузеры, Electron), берутся кадры дочернего процесса.
+    /// FPS of the given process, or null if the process is not presenting frames
+    /// (or monitoring is unavailable). If the window is drawn not by the process itself but by its GPU process
+    /// (browsers, Electron), the child process frames are used.
     /// </summary>
     public int? GetFps(int pid)
     {
@@ -143,7 +146,7 @@ internal sealed class FpsMonitor : IDisposable
         bool retarget = pid != Volatile.Read(ref _targetPid);
         if (retarget || now - _familyTick > FamilyRefreshMs)
         {
-            var family = Native.ProcessTree.RenderingChildren(pid); // снимок процессов — вне блокировки
+            var family = Native.ProcessTree.RenderingChildren(pid); // process snapshot: outside the lock
             family.Add(pid);
             lock (_lock)
             {
@@ -160,7 +163,7 @@ internal sealed class FpsMonitor : IDisposable
 
         lock (_lock)
         {
-            // Сам процесс окна важнее дочерних: так игра никогда не подменяется вспомогательным процессом.
+            // The window's own process wins over its children, so a game is never replaced by a helper process.
             if (_counters.TryGetValue(pid, out var own) && Fps(own, now) is int f) return f;
 
             int? best = null;
@@ -175,7 +178,7 @@ internal sealed class FpsMonitor : IDisposable
         bool apiAlive = c.LastApiTick != 0 && now - c.LastApiTick < StaleMs;
         bool kernelAlive = c.LastKernelTick != 0 && now - c.LastKernelTick < StaleMs;
 
-        // Предпочитаем DXGI/D3D9; ядро — только если от API событий нет (чтобы не считать кадр дважды).
+        // Prefer DXGI/D3D9; use the kernel only when the APIs report nothing (so a frame is not counted twice).
         Queue<double> q;
         double last;
         if (apiAlive) { q = c.Api; last = c.LastApiTime; }

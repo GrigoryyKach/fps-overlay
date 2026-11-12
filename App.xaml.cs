@@ -14,7 +14,7 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // Только один экземпляр
+        // Single instance only
         _mutex = new Mutex(true, @"Global\FpsOverlay.SingleInstance", out _ownsMutex);
         if (!_ownsMutex)
         {
@@ -23,6 +23,7 @@ public partial class App : Application
         }
 
         var settings = Settings.Load();
+        Strings.Resolve(settings); // language: settings -> .nimvoro.json marker -> en
         _overlay = new OverlayWindow(settings);
         _overlay.Show();
 
