@@ -73,7 +73,8 @@
       "requirements": [
         "Windows 10/11 x64",
         "Права администратора (для подсчёта FPS)"
-      ]
+      ],
+      "category": "Игры"
     },
     "uk": {
       "tagline": "FPS, CPU, GPU і RAM поверх ігор",
@@ -103,7 +104,8 @@
       "requirements": [
         "Windows 10/11 x64",
         "Права адміністратора (для підрахунку FPS)"
-      ]
+      ],
+      "category": "Ігри"
     }
   }
 }
