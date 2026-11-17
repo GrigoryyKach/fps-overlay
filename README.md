@@ -57,3 +57,7 @@ On startup the app checks the latest [release](https://github.com/GrigoryyKach/f
 When a newer version exists, the Update item hands the update to the launcher; without the launcher it opens the release page.
 
 Releases are built by GitHub Actions when a tag is pushed: bump the version in `FpsOverlay.csproj`, then `git tag v{version} && git push --tags`.
+
+## Support
+
+If you find FPS Overlay useful, you can support its development: https://donatello.to/MicsGame

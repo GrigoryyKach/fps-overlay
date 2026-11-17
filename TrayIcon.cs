@@ -9,13 +9,15 @@ namespace FpsOverlay;
 /// <summary>Tray icon: the only way to control the overlay (it has no window or taskbar button).</summary>
 internal sealed class TrayIcon : IDisposable
 {
+    private const string SupportUrl = "https://donatello.to/MicsGame";
+
     private readonly NotifyIcon _notifyIcon;
     private readonly Icon _icon;
     private readonly ContextMenuStrip _menu;
     private readonly Settings _settings;
     private readonly ToolStripMenuItem _updateItem;
     private readonly ToolStripMenuItem _checkNowItem;
-    private readonly ToolStripMenuItem _colorItem, _autostartItem, _resetItem, _exitItem;
+    private readonly ToolStripMenuItem _colorItem, _autostartItem, _resetItem, _exitItem, _supportItem;
     private readonly ToolStripMenuItem _updatesMenu, _autoUpdateItem, _languageMenu, _themeMenu;
     private readonly ToolStripMenuItem _fpsErrorItem;
     private readonly Dictionary<Lang, ToolStripMenuItem> _langItems = new();
@@ -54,6 +56,7 @@ internal sealed class TrayIcon : IDisposable
 
         _resetItem = new ToolStripMenuItem(null, null, (_, _) => overlay.ResetPosition());
         _exitItem = new ToolStripMenuItem(null, null, (_, _) => exit());
+        _supportItem = new ToolStripMenuItem(null, null, (_, _) => OpenSupport());
 
         // Language submenu
         _languageMenu = new ToolStripMenuItem();
@@ -99,7 +102,7 @@ internal sealed class TrayIcon : IDisposable
         _menu.Items.AddRange(new ToolStripItem[]
         {
             _colorItem, _autostartItem, _resetItem, _languageMenu, _themeMenu, _updatesMenu,
-            new ToolStripSeparator(), _exitItem,
+            new ToolStripSeparator(), _supportItem, _exitItem,
         });
 
         _notifyIcon = new NotifyIcon { Icon = _icon, ContextMenuStrip = _menu, Visible = true };
@@ -111,6 +114,12 @@ internal sealed class TrayIcon : IDisposable
 
         if (settings.CheckUpdates)
             _ = CheckUpdates(false);
+    }
+
+    private static void OpenSupport()
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(SupportUrl) { UseShellExecute = true }); }
+        catch { /* no default browser: nothing to do */ }
     }
 
     private void SetLanguage(Lang lang)
@@ -135,6 +144,7 @@ internal sealed class TrayIcon : IDisposable
         _colorItem.Text = Strings.T("menu.color");
         _autostartItem.Text = Strings.T("menu.autostart");
         _resetItem.Text = Strings.T("menu.reset");
+        _supportItem.Text = Strings.T("menu.support");
         _exitItem.Text = Strings.T("menu.exit");
         _languageMenu.Text = Strings.T("menu.language");
         _themeMenu.Text = Strings.T("menu.theme");

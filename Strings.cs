@@ -80,6 +80,7 @@ internal static class Strings
         ["menu.color"] = new[] { "Color FPS by thresholds", "Цвет FPS по порогам", "Колір FPS за порогами" },
         ["menu.autostart"] = new[] { "Start with Windows", "Автозапуск с Windows", "Автозапуск із Windows" },
         ["menu.reset"] = new[] { "Reset position", "Сбросить позицию", "Скинути позицію" },
+        ["menu.support"] = new[] { "Support the author ♥", "Поддержать автора ♥", "Підтримати автора ♥" },
         ["menu.exit"] = new[] { "Exit", "Выход", "Вихід" },
         ["menu.language"] = new[] { "Language", "Язык", "Мова" },
         ["menu.theme"] = new[] { "Theme", "Тема", "Тема" },
