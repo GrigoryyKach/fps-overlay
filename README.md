@@ -7,6 +7,10 @@ Written in C# (WPF, .NET 8).
 C 23  G 97  R 9.1/32  F 144
 ```
 
+## Platforms
+
+Windows only (Windows 10/11 x64). There is no Linux version, because the app depends on Windows-specific APIs. In the NIMVORO launcher on Linux it is not shown (`"platforms": ["windows"]` in `nimvoro.json`).
+
 ## Features
 
 - **FPS without injecting into the game.** The app subscribes to the frame-present ETW events that Windows writes itself, the same way PresentMon and Xbox Game Bar do.
