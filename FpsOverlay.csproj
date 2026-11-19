@@ -13,7 +13,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <ApplicationIcon>assets\icon.ico</ApplicationIcon>
     <Product>FPS Overlay</Product>
     <!-- DPI is set in the manifest, which is right for WPF; the warning concerns WinForms windows -->

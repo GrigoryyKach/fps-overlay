@@ -9,20 +9,23 @@ namespace FpsOverlay;
 /// <summary>Theme preference stored in settings.json.</summary>
 internal enum ThemePreference { System, Light, Dark }
 
-/// <summary>Colours of the tray menu in the NIMVORO suite style (accent gradient #4f6bff to #8a5bff).</summary>
+/// <summary>Colours of the tray menu: the NIMVORO suite graphite ramp with the sky accent of this app.</summary>
 internal sealed record Palette(
     Color Background, Color Text, Color TextDisabled, Color Border, Color Separator,
-    Color Hover, Color AccentFrom, Color AccentTo, Color OnAccent)
+    Color Hover, Color Accent, Color AccentInk, Color OnAccent)
 {
+    // Dark: card step #19191b, text #ededed, muted #85858b, hairline = #ededed at 8% on the card.
     public static readonly Palette Dark = new(
-        Color.FromArgb(0x1b, 0x1d, 0x26), Color.FromArgb(0xe8, 0xea, 0xf2), Color.FromArgb(0x7b, 0x80, 0x93),
-        Color.FromArgb(0x38, 0x3c, 0x4d), Color.FromArgb(0x33, 0x37, 0x47), Color.FromArgb(0x2a, 0x2e, 0x3d),
-        Color.FromArgb(0x4f, 0x6b, 0xff), Color.FromArgb(0x8a, 0x5b, 0xff), Color.White);
+        Color.FromArgb(0x19, 0x19, 0x1b), Color.FromArgb(0xed, 0xed, 0xed), Color.FromArgb(0x85, 0x85, 0x8b),
+        Color.FromArgb(0x2c, 0x2c, 0x2e), Color.FromArgb(0x2c, 0x2c, 0x2e), Color.FromArgb(0x23, 0x23, 0x25),
+        Color.FromArgb(0x4f, 0xc3, 0xf7), Color.FromArgb(0x4f, 0xc3, 0xf7), Color.FromArgb(0x14, 0x14, 0x15));
 
+    // Light: white card, text #171717, muted #737373, hairline = #171717 at 8% on white.
+    // AccentInk is the darker sky used for ticks on the light surface (5.6:1 on white).
     public static readonly Palette Light = new(
-        Color.FromArgb(0xfb, 0xfb, 0xfe), Color.FromArgb(0x1d, 0x20, 0x2e), Color.FromArgb(0x9a, 0x9f, 0xb2),
-        Color.FromArgb(0xd5, 0xd9, 0xe6), Color.FromArgb(0xe3, 0xe6, 0xf0), Color.FromArgb(0xec, 0xee, 0xfa),
-        Color.FromArgb(0x4f, 0x6b, 0xff), Color.FromArgb(0x8a, 0x5b, 0xff), Color.White);
+        Color.FromArgb(0xff, 0xff, 0xff), Color.FromArgb(0x17, 0x17, 0x17), Color.FromArgb(0x73, 0x73, 0x73),
+        Color.FromArgb(0xec, 0xec, 0xec), Color.FromArgb(0xec, 0xec, 0xec), Color.FromArgb(0xf4, 0xf4, 0xf5),
+        Color.FromArgb(0x4f, 0xc3, 0xf7), Color.FromArgb(0x0b, 0x6e, 0x9f), Color.FromArgb(0x17, 0x17, 0x17));
 }
 
 internal static class Theme
@@ -71,7 +74,7 @@ internal static class Theme
     }
 }
 
-/// <summary>Flat menu renderer: palette background, accent-gradient hover, thin border.</summary>
+/// <summary>Flat menu renderer: palette background, solid accent hover, thin border.</summary>
 internal sealed class SuiteRenderer : ToolStripProfessionalRenderer
 {
     private readonly Palette _p;
@@ -106,7 +109,7 @@ internal sealed class SuiteRenderer : ToolStripProfessionalRenderer
         var r = new Rectangle(3, 1, item.Width - 6, item.Height - 2);
         if (item.Selected && item.Enabled)
         {
-            using var br = new LinearGradientBrush(r, _p.AccentFrom, _p.AccentTo, LinearGradientMode.Horizontal);
+            using var br = new SolidBrush(_p.Accent);
             e.Graphics.FillRectangle(br, r);
         }
         else if (item is ToolStripMenuItem { DropDown.Visible: true })
@@ -143,7 +146,7 @@ internal sealed class SuiteRenderer : ToolStripProfessionalRenderer
         var g = e.Graphics;
         var r = e.ImageRectangle;
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        var color = e.Item.Selected && e.Item.Enabled ? _p.OnAccent : _p.AccentFrom;
+        var color = e.Item.Selected && e.Item.Enabled ? _p.OnAccent : _p.AccentInk;
         using var pen = new Pen(color, 1.8f) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round };
         float cx = r.X + r.Width / 2f, cy = r.Y + r.Height / 2f;
         g.DrawLines(pen, new[]
@@ -165,10 +168,10 @@ internal sealed class SuiteColorTable : ProfessionalColorTable
 
     public override Color ToolStripDropDownBackground => _p.Background;
     public override Color MenuBorder => _p.Border;
-    public override Color MenuItemBorder => _p.AccentFrom;
-    public override Color MenuItemSelected => _p.AccentFrom;
-    public override Color MenuItemSelectedGradientBegin => _p.AccentFrom;
-    public override Color MenuItemSelectedGradientEnd => _p.AccentTo;
+    public override Color MenuItemBorder => _p.Accent;
+    public override Color MenuItemSelected => _p.Accent;
+    public override Color MenuItemSelectedGradientBegin => _p.Accent;
+    public override Color MenuItemSelectedGradientEnd => _p.Accent;
     public override Color ImageMarginGradientBegin => _p.Background;
     public override Color ImageMarginGradientMiddle => _p.Background;
     public override Color ImageMarginGradientEnd => _p.Background;

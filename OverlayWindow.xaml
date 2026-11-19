@@ -14,16 +14,16 @@
         SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display">
 
-    <!-- The frame becomes visible (blue) while Alt is held -->
+    <!-- The frame becomes visible (sky blue) while Alt is held -->
     <Border x:Name="Frame"
             Background="#8C000000"
             BorderBrush="Transparent"
             BorderThickness="1"
-            CornerRadius="2"
-            Padding="3,0,3,1">
+            CornerRadius="4"
+            Padding="4,2,4,2">
         <TextBlock x:Name="Readout"
                    FontFamily="Consolas"
                    FontSize="11"
-                   Foreground="White" />
+                   Foreground="#EDEDED" />
     </Border>
 </Window>

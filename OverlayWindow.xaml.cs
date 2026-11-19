@@ -21,11 +21,11 @@ public partial class OverlayWindow : Window
 {
     private const double EdgeMarginDip = 4;
 
-    private static readonly Brush LabelBrush = Frozen(Color.FromRgb(0x8A, 0x8A, 0x8A));
-    private static readonly Brush ValueBrush = Brushes.White;
-    private static readonly Brush GoodBrush = Frozen(Color.FromRgb(0x6E, 0xE7, 0x7A));
-    private static readonly Brush WarnBrush = Frozen(Color.FromRgb(0xFF, 0xD5, 0x4F));
-    private static readonly Brush BadBrush = Frozen(Color.FromRgb(0xFF, 0x6B, 0x6B));
+    private static readonly Brush LabelBrush = Frozen(Color.FromRgb(0x85, 0x85, 0x8B));
+    private static readonly Brush ValueBrush = Frozen(Color.FromRgb(0xED, 0xED, 0xED));
+    private static readonly Brush GoodBrush = Frozen(Color.FromRgb(0x4C, 0xC3, 0x8A));
+    private static readonly Brush WarnBrush = Frozen(Color.FromRgb(0xF0, 0xB1, 0x3A));
+    private static readonly Brush BadBrush = Frozen(Color.FromRgb(0xE5, 0x48, 0x4D));
     private static readonly Brush AccentBrush = Frozen(Color.FromRgb(0x4F, 0xC3, 0xF7));
 
     private readonly Settings _settings;
