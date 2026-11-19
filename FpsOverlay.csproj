@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="assetsonts\PlexSans-Regular.ttf" LogicalName="PlexSans-Regular.ttf" />
+    <EmbeddedResource Include="assets/fonts/PlexSans-Regular.ttf" LogicalName="PlexSans-Regular.ttf" />
   </ItemGroup>
 
   <ItemGroup>
