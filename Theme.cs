@@ -1,6 +1,9 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Drawing.Text;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
@@ -44,6 +47,32 @@ internal static class Theme
         }
     }
 
+    private static PrivateFontCollection? _fonts;
+
+    /// <summary>IBM Plex Sans (embedded, OFL) as the menu font; null falls back to the system font.</summary>
+    private static FontFamily? PlexSans()
+    {
+        if (_fonts == null)
+        {
+            _fonts = new PrivateFontCollection();
+            try
+            {
+                using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("PlexSans-Regular.ttf");
+                if (s != null)
+                {
+                    var data = new byte[s.Length];
+                    s.ReadExactly(data);
+                    // The memory must stay alive for the life of the collection, so it is never freed.
+                    IntPtr ptr = Marshal.AllocHGlobal(data.Length);
+                    Marshal.Copy(data, 0, ptr, data.Length);
+                    _fonts.AddMemoryFont(ptr, data.Length);
+                }
+            }
+            catch { }
+        }
+        return _fonts.Families.Length > 0 ? _fonts.Families[0] : null;
+    }
+
     /// <summary>The palette for a preference; System follows Windows.</summary>
     public static Palette Resolve(ThemePreference pref) => pref switch
     {
@@ -64,6 +93,9 @@ internal static class Theme
     private static void ApplyItem(ToolStripItem item, Palette p)
     {
         item.BackColor = p.Background;
+        var fam = PlexSans();
+        if (fam != null && fam.IsStyleAvailable(FontStyle.Regular))
+            item.Font = new Font(fam, item.Font.Size, item.Font.Style, GraphicsUnit.Point);
         item.ForeColor = item.Enabled ? p.Text : p.TextDisabled;
         if (item is ToolStripDropDownItem dd && dd.HasDropDownItems)
         {

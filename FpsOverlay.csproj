@@ -21,6 +21,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="assetsonts\PlexSans-Regular.ttf" LogicalName="PlexSans-Regular.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Reads ETW Present events (DXGI / D3D9 / DxgKrnl) to count FPS -->
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.*" />
   </ItemGroup>
