@@ -14,6 +14,9 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // After a self-update: wait for the old process (so its mutex is free) and delete *.old leftovers
+        SelfUpdate.Startup(Updater.AppDir, Updater.Id);
+
         // Single instance only
         _mutex = new Mutex(true, @"Global\FpsOverlay.SingleInstance", out _ownsMutex);
         if (!_ownsMutex)

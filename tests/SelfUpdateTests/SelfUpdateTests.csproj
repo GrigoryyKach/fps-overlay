@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Console harness for SelfUpdate.cs: no WPF, no app start, no UAC. Run: dotnet run (project tests/SelfUpdateTests) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>FpsOverlay</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../SelfUpdate.cs" />
+  </ItemGroup>
+</Project>

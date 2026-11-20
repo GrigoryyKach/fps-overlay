@@ -80,7 +80,7 @@ internal sealed class TrayIcon : IDisposable
 
         // Updates (NIMVORO)
         _updateItem = new ToolStripMenuItem { Visible = false, Font = new Font(SystemFonts.MenuFont ?? Control.DefaultFont, FontStyle.Bold) };
-        _updateItem.Click += (_, _) => { if (Updater.Apply(_release)) _exit(); };
+        _updateItem.Click += (_, _) => StartUpdate();
         _autoUpdateItem = new ToolStripMenuItem { Checked = settings.CheckUpdates, CheckOnClick = true };
         _autoUpdateItem.CheckedChanged += (_, _) =>
         {
@@ -106,7 +106,7 @@ internal sealed class TrayIcon : IDisposable
         });
 
         _notifyIcon = new NotifyIcon { Icon = _icon, ContextMenuStrip = _menu, Visible = true };
-        _notifyIcon.BalloonTipClicked += (_, _) => { if (_release != null && Updater.Apply(_release)) _exit(); };
+        _notifyIcon.BalloonTipClicked += (_, _) => { if (_release != null) StartUpdate(); };
 
         ApplyTexts();
         ApplyTheme();
@@ -174,6 +174,36 @@ internal sealed class TrayIcon : IDisposable
         System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(ApplyTheme));
     }
 
+    private UpdateWindow? _updateWindow;
+    private bool _updating;
+
+    /// <summary>"Update": launcher hand-over, in-place self-update with a progress window, or the release page.</summary>
+    private void StartUpdate()
+    {
+        if (_release == null || _updating) return;
+        if (Updater.ChooseMode() == UpdateMode.Self)
+        {
+            RunSelfUpdate(_release);
+            return;
+        }
+        if (Updater.Apply(_release)) _exit();
+    }
+
+    private void RunSelfUpdate(Updater.Release release)
+    {
+        _updating = true;
+        _updateWindow?.Close();
+        var win = _updateWindow = new UpdateWindow(Theme.Resolve(_settings.Theme), release.Version);
+        win.RetryClicked += () => RunSelfUpdate(release);
+        win.ManualClicked += () => Updater.OpenReleasePage(release);
+        win.Report(new UpdateProgress(UpdatePhase.Downloading));
+        win.Show();
+        void Post(Action a) { try { if (!win.IsDisposed) win.BeginInvoke(a); } catch { /* window gone */ } }
+        _ = Updater.SelfUpdateAsync(release,
+            p => Post(() => { win.Report(p); if (p.Phase == UpdatePhase.Failed) _updating = false; }),
+            () => Post(() => _exit())).ContinueWith(_ => { }, System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted);
+    }
+
     /// <summary>Checks for updates. A manual check also reports that there is nothing new.</summary>
     private async System.Threading.Tasks.Task CheckUpdates(bool manual)
     {
@@ -186,6 +216,8 @@ internal sealed class TrayIcon : IDisposable
             _updateItem.Text = Strings.F("menu.updateTo", newer.Version);
             _updateItem.Visible = true;
             _notifyIcon.ShowBalloonTip(5000, "FPS Overlay", Strings.F("update.available", newer.Version), ToolTipIcon.Info);
+            // test hook: start the self-update right after the check finds a newer version
+            if (Environment.GetEnvironmentVariable("FPS_OVERLAY_AUTO_UPDATE") == "1") StartUpdate();
         }
         else if (manual)
         {

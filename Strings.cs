@@ -98,5 +98,18 @@ internal static class Strings
         ["update.available"] = new[] { "Version {0} is available. Click to update.", "Доступна версия {0}. Щёлкните, чтобы обновить.", "Доступна версія {0}. Клацніть, щоб оновити." },
         ["update.latest"] = new[] { "You have the latest version ({0})", "Установлена последняя версия ({0})", "Встановлено останню версію ({0})" },
         ["update.failed"] = new[] { "Could not check for updates", "Не удалось проверить обновления", "Не вдалося перевірити оновлення" },
+        ["update.heading"] = new[] { "Updating to version {0}", "Обновление до версии {0}", "Оновлення до версії {0}" },
+        ["update.downloading"] = new[] { "Downloading update…", "Загружаем обновление…", "Завантажуємо оновлення…" },
+        ["update.verifying"] = new[] { "Verifying…", "Проверяем…", "Перевіряємо…" },
+        ["update.installing"] = new[] { "Installing…", "Устанавливаем…", "Встановлюємо…" },
+        ["update.restarting"] = new[] { "Restarting…", "Перезапускаем…", "Перезапускаємо…" },
+        ["update.tryAgain"] = new[] { "Try again", "Повторить", "Повторити" },
+        ["update.manual"] = new[] { "Download manually", "Скачать вручную", "Завантажити вручну" },
+        ["update.errDownload"] = new[] { "Download failed. Check your connection.", "Не удалось загрузить. Проверьте соединение.", "Не вдалося завантажити. Перевірте з'єднання." },
+        ["update.errDigest"] = new[] { "The file did not match its checksum and was not installed.", "Файл не совпал с контрольной суммой и не установлен.", "Файл не збігся з контрольною сумою й не встановлений." },
+        ["update.errNoDigest"] = new[] { "The release has no checksum, so it was not installed.", "У релиза нет контрольной суммы, поэтому он не установлен.", "У релізу немає контрольної суми, тому його не встановлено." },
+        ["update.errPackage"] = new[] { "The update package is not valid for this app.", "Пакет обновления не подходит этому приложению.", "Пакет оновлення не підходить цьому застосунку." },
+        ["update.errInstall"] = new[] { "Could not replace the files. Nothing was changed.", "Не удалось заменить файлы. Ничего не изменено.", "Не вдалося замінити файли. Нічого не змінено." },
+        ["update.errRestart"] = new[] { "Updated, but the app could not restart. Start it again by hand.", "Обновлено, но приложение не перезапустилось. Запустите его вручную.", "Оновлено, але застосунок не перезапустився. Запустіть його вручну." },
     };
 }

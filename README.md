@@ -58,7 +58,9 @@ Autostart.cs             autostart through Task Scheduler (with administrator ri
 
 The tool is part of the [NIMVORO](https://github.com/GrigoryyKach/nimvoro) suite: the launcher installs and updates it in one click.
 On startup the app checks the latest [release](https://github.com/GrigoryyKach/fps-overlay/releases/latest) (toggle **Updates > Check for updates on startup** in the tray menu).
-When a newer version exists, the Update item hands the update to the launcher; without the launcher it opens the release page.
+When a newer version exists, the Update item hands the update to the launcher. Without the launcher the app updates itself: it downloads `FpsOverlay-win-x64.zip` from the release, checks the SHA-256 against the asset's `digest` (no digest, no install), extracts to `.update-staging`, swaps the files (the running exe is renamed to `.old`; any failure rolls back) and restarts, which shows the UAC prompt as usual. Progress is shown in a small window in the tray menu's style. `*.old` leftovers are removed on the next start. If the app folder is not writable, the release page opens instead.
+
+Test overrides: `FPS_OVERLAY_UPDATE_API` (release JSON URL), `FPS_OVERLAY_AUTO_UPDATE=1`, `NIMVORO_LAUNCHER_JSON`. Unit tests: `dotnet run --project tests/SelfUpdateTests`.
 
 Releases are built by GitHub Actions when a tag is pushed: bump the version in `FpsOverlay.csproj`, then `git tag v{version} && git push --tags`.
 

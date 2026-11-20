@@ -50,7 +50,7 @@ internal static class Theme
     private static PrivateFontCollection? _fonts;
 
     /// <summary>IBM Plex Sans (embedded, OFL) as the menu font; null falls back to the system font.</summary>
-    private static FontFamily? PlexSans()
+    internal static FontFamily? PlexSans()
     {
         if (_fonts == null)
         {
